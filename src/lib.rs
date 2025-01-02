@@ -17,14 +17,26 @@
 pub mod game;
 pub mod marble_moves;
 pub mod player;
+pub mod util;
 
 #[cfg(test)]
 mod tests {
+    use util::download_model;
     use std::path::Path;
     use game::AbaloneGame;
     use player::MagisterLudi;
 
     use super::*;
+
+    #[test]
+    fn test_download() {
+        let dl_folder = Path::new(".").join("test_download");
+        let path_to_model = download_model(dl_folder.to_str().unwrap());
+        assert!(Path::new(&path_to_model).join("saved_model.pb").exists());
+        assert!(Path::new(&path_to_model).join("variables").join("variables.data-00000-of-00001").exists());
+
+        let _ = std::fs::remove_dir_all(Path::new(&path_to_model));
+    }
 
     #[test]
     fn test_abalone_game() {
@@ -76,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_magister_ludi() {
-        let model_path = Path::new("$CARGO_MANIFEST_PATH").join("src").join("magister_zero_unwrap_save");
+        let model_path = Path::new(".").join("src").join("magister_zero_unwrap_save");
         let model_path_str = model_path.to_str().unwrap();
         let mut magi_ludi = MagisterLudi::new(game::BELGIAN_DAISY, model_path_str, 10, 5, 1, 5);
         let _chosen_move = magi_ludi.own_move();

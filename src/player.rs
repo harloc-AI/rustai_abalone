@@ -55,6 +55,7 @@ impl MagisterLudi {
     /// # Arguments
     ///
     /// * `board` - 11 x 11 array with the initial board position
+    /// * `model_path` - path to the stored tensorflow model
     /// * `mcts_num` - number of leafs for every MCTS
     /// * `mcts_parallel` - number of threads for the MCTS
     /// * `mcts_minimum` - denotes how often a child state must at least be selected
