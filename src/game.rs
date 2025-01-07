@@ -68,6 +68,12 @@ impl Coord {
     /// * `new_coord` - a new Coord instance with new x- and y-values
     ///
     /// # Examples
+    /// 
+    /// ```rust
+    /// let coord_init = Coord::new(2, 6);
+    /// let marble_move = MarbleMove::new(1, -1);
+    /// let coord_new = coord_init.multi_move(marble_move, 3);  // x == 5 and y == 3 for this case
+    /// ```
     pub fn multi_move(self, marb_move: &MarbleMove, factor: usize) -> Self {
         Self::new(
             match marb_move.dx {
@@ -393,7 +399,7 @@ impl AbaloneGame {
     ///
     /// # Examples
     /// ```rust
-    /// let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let is_finished = abalone.get_game_ended();
     /// ```
     pub fn get_game_ended(&self) -> bool {
@@ -410,7 +416,7 @@ impl AbaloneGame {
     ///
     /// # Examples
     /// ```rust
-    /// let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let game_result = abalone.get_game_result();
     /// ```
     pub fn get_game_result(&self) -> i8 {
@@ -432,7 +438,7 @@ impl AbaloneGame {
     ///
     /// # Examples
     /// ```rust
-    /// let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let is_black_to_move = abalone.get_black_move();
     /// ```
     pub fn rotate_board(board: Board) -> Board {
@@ -460,7 +466,7 @@ impl AbaloneGame {
     ///
     /// # Examples
     /// ```rust
-    /// let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let whites_perspective = abalone.get_rotated_state();
     /// ```
     pub fn get_rotated_state(&self) -> Board {
@@ -483,7 +489,7 @@ impl AbaloneGame {
     /// # Examples
     ///
     /// ```rust
-    /// let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let (pov_state, move_ids) = abalone.calc_reasonalbe_moves();
     /// ```
     pub fn calc_reasonalbe_moves(&mut self) -> (Board, Vec<usize>) {
@@ -682,7 +688,7 @@ impl AbaloneGame {
     /// # Examples
     ///
     /// ```rust
-    /// let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// abalone.calc_reasonalbe_moves();
     /// let chosen_sate = abalone.get_next_position(0);
     /// ```
@@ -708,7 +714,7 @@ impl AbaloneGame {
     ///
     /// # Examples
     /// ```
-    /// let mut abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// # let mut abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let new_board = [
     ///     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     ///     [3, 3, 3, 3, 3, 2, 2, 0, 1, 1, 3],
@@ -777,7 +783,7 @@ impl AbaloneGame {
     /// # Examples
     ///
     /// ```
-    /// let mut abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// # let mut abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// (_pov_state, _move_ids) = abalone.calc_reasonalbe_moves();
     /// abalone.update_by_id(0);
     /// ```
@@ -786,5 +792,25 @@ impl AbaloneGame {
     /// will panic if the given `index` is out of bounds
     pub fn update_by_id(&mut self, index: usize) {
         self.update_state(self.get_next_position(index));
+    }
+
+    /// sets the game result to the given value and ends the game
+    /// 
+    /// # Arguments
+    /// 
+    /// * `result` - game result, can be `-1` => black wins, `0` => draw, or `1` => white wins
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// abalone.end_with_result(1);
+    /// ```
+    pub fn end_with_result(&mut self, result: i8) {
+        if result > 1 || result < -1 {
+            return;
+        }
+        self.result = result;
+        self.game_ended = true;
     }
 }

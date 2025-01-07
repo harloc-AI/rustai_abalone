@@ -21,7 +21,7 @@ pub mod util;
 
 #[cfg(test)]
 mod tests {
-    use util::download_model;
+    use util::{download_model, check_model_present};
     use std::path::Path;
     use game::AbaloneGame;
     use player::MagisterLudi;
@@ -32,10 +32,8 @@ mod tests {
     fn test_download() {
         let dl_folder = Path::new(".").join("test_download");
         let path_to_model = download_model(dl_folder.to_str().unwrap());
-        assert!(Path::new(&path_to_model).join("saved_model.pb").exists());
-        assert!(Path::new(&path_to_model).join("variables").join("variables.data-00000-of-00001").exists());
-
-        let _ = std::fs::remove_dir_all(Path::new(&path_to_model));
+        let check = check_model_present(&path_to_model).is_some();
+        assert!(check);
     }
 
     #[test]
@@ -88,9 +86,14 @@ mod tests {
 
     #[test]
     fn test_magister_ludi() {
-        let model_path = Path::new(".").join("src").join("magister_zero_unwrap_save");
-        let model_path_str = model_path.to_str().unwrap();
-        let mut magi_ludi = MagisterLudi::new(game::BELGIAN_DAISY, model_path_str, 10, 5, 1, 5);
-        let _chosen_move = magi_ludi.own_move();
+        let mut magi_ludi = MagisterLudi::new(game::BELGIAN_DAISY, None, 10, 5, 1, 5);
+        println!("initialized succesfully");
+        let chosen_move = magi_ludi.own_move();
+        assert!(AbaloneGame::validate_board(chosen_move));
+        println!("Finished move");
+        magi_ludi.start_new_game(game::BELGIAN_DAISY);
+        println!("Started new game");
+        magi_ludi.stop_execution();
+        println!("Stopped execution");
     }
 }

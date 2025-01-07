@@ -2,7 +2,7 @@
 name = "abalone"
 version = "0.1.0"
 edition = "2021"
-exclude = ["target/", "old_rust_files/", "Cargo.lock"]
+exclude = ["target/", "old_rust_files/", "Cargo.lock", "*.zip", "magister_zero_unwrap_save/"]
 
 [dependencies]
 phf = { version = "0.11", features = ["macros"] }

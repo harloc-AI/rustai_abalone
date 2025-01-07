@@ -16,9 +16,9 @@ fn criterion_benchmark(c: &mut Criterion) {
         [3, 2, 2, 0, 1, 1, 3, 3, 3, 3, 3],
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     ];
-    let model_path = Path::new("$CARGO_MANIFEST_PATH").join("src").join("magister_zero_unwrap_save");
+    let model_path = Path::new("$CARGO_MANIFEST_DIR").join("magister_zero_unwrap_save");
     let model_path_str = model_path.to_str().unwrap();
-    let mut magi_ludi = player::MagisterLudi::new(board, model_path_str, 200, 10, 7, 13);
+    let mut magi_ludi = player::MagisterLudi::new(board, Some(model_path_str), 200, 10, 7, 13);
     c.bench_function("test magister own_move", |b| {
         b.iter(|| magi_ludi.own_move())
     });

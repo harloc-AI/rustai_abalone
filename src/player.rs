@@ -11,11 +11,14 @@ use tensorflow::{
 };
 
 use super::game;
+use super::util;
 
 /// agent that can play Abalone
 pub struct MagisterLudi {
     /// abalone game instance that the agent uses for internal representation
     abalone: game::AbaloneGame,
+    /// stored path to the tensorflow model
+    model_path: String,
     /// boolean, that denotes whether the internal game representation reached a final position
     main_ended: Arc<Mutex<bool>>,
     /// tensorflow session for the main thread
@@ -50,12 +53,14 @@ pub struct MagisterLudi {
 }
 
 impl MagisterLudi {
-    /// creates a new agent instance and starts the necessary threads
+    /// creates a new agent instance and starts the necessary threads.
+    /// Checks whether the required model is present in the given `model_path`.
+    /// If it is not present it will be automatically downloaded.
     ///
     /// # Arguments
     ///
     /// * `board` - 11 x 11 array with the initial board position
-    /// * `model_path` - path to the stored tensorflow model
+    /// * `model_path` - optional path to the stored tensorflow model, if None the library folder will be selected
     /// * `mcts_num` - number of leafs for every MCTS
     /// * `mcts_parallel` - number of threads for the MCTS
     /// * `mcts_minimum` - denotes how often a child state must at least be selected
@@ -63,33 +68,48 @@ impl MagisterLudi {
     ///     if 0 simulations run until the games end
     ///
     /// # Examples
+    /// 
     /// ```rust
-    /// let board = [
-    ///     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-    ///     [3, 3, 3, 3, 3, 1, 1, 0, 2, 2, 3],
-    ///     [3, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3],
-    ///     [3, 3, 3, 0, 1, 1, 0, 2, 2, 0, 3],
-    ///     [3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 3],
-    ///     [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
-    ///     [3, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3],
-    ///     [3, 0, 2, 2, 0, 1, 1, 0, 3, 3, 3],
-    ///     [3, 2, 2, 2, 1, 1, 1, 3, 3, 3, 3],
-    ///     [3, 2, 2, 0, 1, 1, 3, 3, 3, 3, 3],
-    ///     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-    /// ];
-    /// let mut magister_ludi = MagisterLudi::new(board, 10, 5, 1, 5);
+    /// use abalone::player::MagisterLudi;
+    /// let mut magister_ludi = MagisterLudi::new(abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
+    /// # magister_ludi.stop_execution();
     /// ```
+    /// 
+    /// # Panics
+    /// 
+    /// will panic if the provided model path does not exist or if the model
+    /// is not present and downloading it fails
     pub fn new(
         board: game::Board,
-        model_path: &str,
+        model_path: Option<&str>,
         mcts_num: usize,
         mcts_parallel: usize,
         mcts_minimum: usize,
         mcts_depth: usize,
     ) -> Self {
-        let (session, _, inp, distr_out, _) = Self::create_session(model_path);
+        // if no path is given the library path will be used
+        let model_path = match model_path {
+            Some(val) => val,
+            _ => &std::env::var("CARGO_MANIFEST_DIR").unwrap()
+        };
+        // panics, if the given path does not exist
+        // searches the path for required files and will download them if not present
+        let final_path = match util::check_model_present(model_path){
+            Some(val) => val,
+            _ => {
+                // if the model is not present, download it
+                util::download_model(model_path);
+                // check whether the download worked, otherwise panic
+                match util::check_model_present(model_path) {
+                    Some(wal) => wal,
+                    _ => panic!("Downloading model did not work!")
+                }
+            }
+        };
+        let (session, _, inp, distr_out, _) = Self::create_session(&final_path);
         let mut mag_ludi = Self {
             abalone: game::AbaloneGame::new(board),
+            model_path: final_path.to_string(),
             main_ended: Arc::new(Mutex::new(false)),
             main_session: session,
             main_inp: inp,
@@ -106,8 +126,36 @@ impl MagisterLudi {
             saved_distr: Arc::new(Mutex::new(HashMap::with_capacity(mcts_num * 150 * 150))),
             game_queue: Arc::new(Mutex::new(Vec::with_capacity(mcts_num))),
         };
-        mag_ludi.start_threads(model_path);
+        mag_ludi.start_threads(&final_path);
         mag_ludi
+    }
+
+    /// starts a new game for the agent
+    /// 
+    /// will start a fresh Abalone game for the given starting position and respawns
+    /// the threads for execution of the MCTS
+    /// 
+    /// # Arguments
+    /// 
+    /// * `board` - starting position for the new game
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// # let mut magister_ludi = abalone::player::MagisterLudi::new(game::BELGIAN_DAISY, None, 10, 5, 1, 5);
+    /// magister_ludi.start_new_game(abalone::game::BELGIAN_DAISY);
+    /// # magister_ludi.stop_execution();
+    /// ```
+    pub fn start_new_game(&mut self, board: game::Board) {
+        if !self.check_threads_all_active() {
+            // be sure that all threads stopped
+            self.stop_execution();
+            // restart threads
+            let load_path = self.model_path.clone();
+            self.start_threads(&load_path);
+        }
+        self.abalone = game::AbaloneGame::new(board);
+        self.main_ended = Arc::new(Mutex::new(false));
     }
 
     /// lets the agent know that a move was made by an external source and change its game representation accordingly
@@ -119,6 +167,7 @@ impl MagisterLudi {
     /// # Examples
     ///
     /// ```rust
+    /// # let mut magister_ludi = abalone::player::MagisterLudi::new(abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
     /// let next_state = [
     ///     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     ///     [3, 3, 3, 3, 3, 1, 1, 0, 2, 2, 3],
@@ -133,6 +182,7 @@ impl MagisterLudi {
     ///     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     /// ];
     /// magister_ludi.external_move(next_state);
+    /// # magister_ludi.stop_execution();
     /// ```
     pub fn external_move(&mut self, new_state: Board) {
         // consider rotation
@@ -149,16 +199,22 @@ impl MagisterLudi {
     /// # Examples
     ///
     /// ```rust
+    /// # let mut magister_ludi = abalone::player::MagisterLudi::new(abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
     /// let next_state = magister_ludi.own_move();
+    /// # magister_ludi.stop_execution();
     /// ```
+    /// 
+    /// # Panics
+    /// 
+    /// will panic if one or more of the MCTS daemon threads are not active anymore
     pub fn own_move(&mut self) -> Board {
-        let start = time::Instant::now();
+        if !self.check_threads_all_active() {
+            panic!("Cannot execute move as there are issues with the activity of MCTS threads")
+        }
         self.choose_possible_moves();
         self.push_to_queue();
         let chosen_state = self.choose_next_move();
         self.check_game_ended();
-        let duration = start.elapsed();
-        println!("Finished moved after {duration:?}");
         chosen_state
     }
 
@@ -351,6 +407,32 @@ impl MagisterLudi {
         }
     }
 
+    /// checks whether all daemon threads for the MCTS are still running
+    /// 
+    /// # Returns
+    /// 
+    /// * `all_active` true if all daemon MCTS threads are still running, else false
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// # let mut magister_ludi = abalone::player::MagisterLudi::new(abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
+    /// let all_active = magister_ludi.check_threads_all_active();
+    /// # magister_ludi.stop_execution();
+    /// ```
+    pub fn check_threads_all_active(& self) -> bool {
+        let mut num_active: usize = 0;
+        for handle in self.mcts_handles.as_slice() {
+            if !handle.is_finished() {
+                num_active += 1;
+            }
+        }
+        if num_active == self.mcts_parallel {
+            return true;
+        }
+        false
+    }
+
     // creates a tensorflow session and input and output operations for the model
     fn create_session(model_path: &str) -> (Session, Graph, Operation, Operation, Operation) {
         let signature_input_parameter_name = "input_8"; // adjust
@@ -467,5 +549,18 @@ impl MagisterLudi {
                 handle.join().unwrap();
             }
         }
+    }
+
+    /// sets the inner game representation result to a draw and stops the daemon threads
+    /// 
+    /// # Examples
+    ///
+    /// ```rust
+    /// # let mut magister_ludi = abalone::player::MagisterLudi::new(abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
+    /// magister_ludi.stop_execution();
+    /// ```
+    pub fn stop_execution(&mut self) {
+        self.abalone.end_with_result(0);
+        self.check_game_ended();
     }
 }
