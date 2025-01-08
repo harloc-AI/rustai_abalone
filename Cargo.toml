@@ -3,6 +3,14 @@ name = "abalone"
 version = "0.1.0"
 edition = "2021"
 exclude = ["target/", "old_rust_files/", "Cargo.lock", "*.zip", "magister_zero_unwrap_save/"]
+authors = ["Harald Locke"]
+description = "Ablone implementation and AI agent to play against"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/harloc-AI/rustai_abalone"
+repository = "https://github.com/harloc-AI/rustai_abalone"
+readme = "README.md"
+keywords = ["AI", "game", "Abalone"]
+categories = ["games", "science"]
 
 [dependencies]
 phf = { version = "0.11", features = ["macros"] }
