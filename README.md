@@ -8,6 +8,9 @@ Abalone implementation and an agent for playing the game using tensorflow &amp; 
 This library is a rust version of [pyai_abalone](https://pypi.org/project/pyai-abalone/)
 The reasons for its creation is to run the MCTS at a decent speed without having to handle all the Python issues with threading.
 
+The current version of the crate is rather build for people interested in machine learning and Abalone enthusiasts as it does
+not provide any GUI or other meaningful ways to play as a human.
+
 ## Future changes
 
 I intend to make it possible to play against the AI.

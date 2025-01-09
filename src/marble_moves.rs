@@ -1,6 +1,17 @@
 use phf::phf_map;
 
-// the keys are string representations of possible moves. One ID belongs to every move.
+/// map that links board coordinates and marble move directions to IDs
+/// 
+/// the keys are string representations of possible moves. One ID belongs to every move.
+/// The last two number (negative or positive) encode the move direction and the first two to six
+/// number encode the initial marble positions.
+/// For example '1510' denotes a move from row `1`, column `5` to increase row by `1` and column by `0`.
+/// In the same manner '151-1' stands for a move from the same position but increasing the
+/// row by `1` and decreasing the column by `1`. '334251-10' will change the row by `-1` and will not
+/// change the column for positions `(3, 3)`, `(4, 2)` and `(5, 1)`. In order to ensure that that the right key for
+/// a move is always present all permutations for all keys do also exist. So not only '334251-10' exists,
+/// but also '423351-10', '425133-10' and so on. This map is used to link the prediction
+/// of follow-up board states to possible actions for the AI.
 pub const MOVES_IDX: phf::Map<&'static str, usize> = phf_map! {
     "1510" => 0,
     "151-1" => 1,

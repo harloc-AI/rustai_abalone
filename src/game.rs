@@ -1,8 +1,11 @@
 use super::marble_moves;
 
+/// number of rows and column for every board representation
 pub const BOARD_SIZE: usize = 11;
-pub const BOARD_MAXID: usize = BOARD_SIZE - 1;
+const BOARD_MAXID: usize = BOARD_SIZE - 1;
 pub type Board = [[i8; BOARD_SIZE]; BOARD_SIZE];
+
+/// empty board with off-board position to create the hexagonal shape
 pub const EMPTY_BOARD: Board = [
     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     [3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 3],
@@ -16,6 +19,8 @@ pub const EMPTY_BOARD: Board = [
     [3, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3],
     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
 ];
+
+/// typical "Belgian Daisy" starting position used in competitional play
 pub const BELGIAN_DAISY: Board = [
     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     [3, 3, 3, 3, 3, 1, 1, 0, 2, 2, 3],

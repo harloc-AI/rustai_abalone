@@ -18,6 +18,7 @@ tensorflow = "0.21.0"
 rand = "0.8.5"
 reqwest = { version = "0.12", features = ["blocking"] }
 zip = "2.2.2"
+crossbeam-channel = "0.5"
 
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }

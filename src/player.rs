@@ -4,6 +4,7 @@ use rand::prelude::{thread_rng, Distribution};
 use rand::seq::SliceRandom;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use crossbeam_channel::{unbounded, Receiver, Sender};
 use std::thread::JoinHandle;
 use std::{thread, time};
 use tensorflow::{
@@ -19,8 +20,9 @@ pub struct MagisterLudi {
     abalone: game::AbaloneGame,
     /// stored path to the tensorflow model
     model_path: String,
-    /// boolean, that denotes whether the internal game representation reached a final position
-    main_ended: Arc<Mutex<bool>>,
+    /// sender and receiver for thread manipulation
+    stop_sender: Sender<bool>,
+    stop_receiver: Receiver<bool>,
     /// tensorflow session for the main thread
     main_session: Session,
     /// tensorflow input operation for the main thread
@@ -106,11 +108,13 @@ impl MagisterLudi {
                 }
             }
         };
+        let (tx, rx) = unbounded();
         let (session, _, inp, distr_out, _) = Self::create_session(&final_path);
         let mut mag_ludi = Self {
             abalone: game::AbaloneGame::new(board),
             model_path: final_path.to_string(),
-            main_ended: Arc::new(Mutex::new(false)),
+            stop_sender: tx,
+            stop_receiver: rx,
             main_session: session,
             main_inp: inp,
             main_distr_out: distr_out,
@@ -155,7 +159,6 @@ impl MagisterLudi {
             self.start_threads(&load_path);
         }
         self.abalone = game::AbaloneGame::new(board);
-        self.main_ended = Arc::new(Mutex::new(false));
     }
 
     /// lets the agent know that a move was made by an external source and change its game representation accordingly
@@ -201,6 +204,7 @@ impl MagisterLudi {
     /// ```rust
     /// # let mut magister_ludi = abalone::player::MagisterLudi::new(abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
     /// let next_state = magister_ludi.own_move();
+    /// assert!(abalone::game::AbaloneGame::validate_board(next_state));
     /// # magister_ludi.stop_execution();
     /// ```
     /// 
@@ -326,7 +330,7 @@ impl MagisterLudi {
     // starts the threads for the MCTS when the class is initialized
     fn start_threads(&mut self, model_path: &str) {
         for i in 0..self.mcts_parallel {
-            let main_ended = self.main_ended.clone();
+            let t_receiver = self.stop_receiver.clone();
             let game_queue = self.game_queue.clone();
             let mcts_results = self.mcts_results.clone();
             let mcts_finished = self.mcts_finished.clone();
@@ -336,12 +340,19 @@ impl MagisterLudi {
             let thread_path = model_path.to_string();
 
             let handle = thread::spawn(move || {
-                let sleep_time = time::Duration::from_millis(100);
+                let sleep_time = time::Duration::from_millis(500);
                 // create model for each thread
                 let (session, _graph, inp, distr_out, rating_out) = Self::create_session(&thread_path);
                 let mut rng = thread_rng();
 
-                while !*main_ended.lock().unwrap() {
+                loop {
+                    if let Ok(signal) = t_receiver.try_recv() {
+                        if signal {
+                            println!("Thread {i} terminating");
+                            break;
+                        }
+                    }
+
                     let leaf_entry = game_queue.lock().unwrap().pop();
                     match leaf_entry {
                         Some(entry) => {
@@ -401,7 +412,6 @@ impl MagisterLudi {
                         }
                     };
                 }
-                println!("Exited thread {i}");
             });
             self.mcts_handles.push(handle);
         }
@@ -541,9 +551,8 @@ impl MagisterLudi {
     fn check_game_ended(&mut self) {
         let game_ended = self.abalone.get_game_ended();
         if game_ended {
-            {
-                let mut game_end_val = self.main_ended.lock().unwrap();
-                *game_end_val = true;
+            for _ in 0..self.mcts_parallel {
+                self.stop_sender.send(true).unwrap();
             }
             while let Some(handle) = self.mcts_handles.pop() {
                 handle.join().unwrap();

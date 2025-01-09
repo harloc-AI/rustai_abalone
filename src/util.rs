@@ -4,7 +4,7 @@ use std::io::{self, Cursor};
 use std::path::Path;
 use zip::ZipArchive;
 
-pub const GIT_MODEL_PATH: &str = "https://github.com/harloc-AI/rustai_abalone/raw/main/src/magister_zero.zip";
+const GIT_MODEL_PATH: &str = "https://github.com/harloc-AI/rustai_abalone/raw/main/src/magister_zero.zip";
 
 fn download_and_extract_zip(url: &str, output_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
     // download .zip file
