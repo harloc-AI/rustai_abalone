@@ -53,6 +53,7 @@ impl Coord {
     /// # Examples
     ///
     /// ```rust
+    /// use abalone::game::Coord;
     /// let x: usize = 3;
     /// let y: usize = 4;
     /// let coordinate = Coord::new(x, y);
@@ -75,9 +76,10 @@ impl Coord {
     /// # Examples
     /// 
     /// ```rust
+    /// use abalone::game::{Coord, MarbleMove};
     /// let coord_init = Coord::new(2, 6);
     /// let marble_move = MarbleMove::new(1, -1);
-    /// let coord_new = coord_init.multi_move(marble_move, 3);  // x == 5 and y == 3 for this case
+    /// let coord_new = coord_init.multi_move(&marble_move, 3);  // x == 5 and y == 3 for this case
     /// ```
     pub fn multi_move(self, marb_move: &MarbleMove, factor: usize) -> Self {
         Self::new(
@@ -111,6 +113,7 @@ impl std::ops::Add<MarbleMove> for Coord {
     ///
     /// # Examples
     /// ```rust
+    /// use abalone::game::{Coord, MarbleMove};
     /// let orig_coord = Coord::new(1, 1);
     /// let marb_move = MarbleMove::new(1, 0);
     /// let new_coord = orig_coord + marb_move; // x == 2, y == 1 for this case
@@ -147,6 +150,7 @@ impl std::ops::Sub<MarbleMove> for Coord {
     ///
     /// # Examples
     /// ```rust
+    /// use abalone::game::{Coord, MarbleMove};
     /// let orig_coord = Coord::new(1, 1);
     /// let marb_move = MarbleMove::new(1, 0);
     /// let new_coord = orig_coord - marb_move; // x == 0, y == 1 for this case
@@ -188,6 +192,7 @@ impl MarbleMove {
     ///
     /// # Examples
     /// ```rust
+    /// use abalone::game::MarbleMove;
     /// let marb_move = MarbleMove::new(1, 0);
     /// ```
     pub fn new(dx: i8, dy: i8) -> Self {
@@ -262,6 +267,7 @@ impl AbaloneGame {
     /// # Examples
     ///
     /// ```rust
+    /// use abalone::game::{AbaloneGame, BELGIAN_DAISY};
     /// let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// ```
     ///
@@ -300,7 +306,8 @@ impl AbaloneGame {
     /// # Examples
     ///
     /// ```rust
-    /// let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
+    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let copy_for_mcts = abalone.mcts_copy();
     /// ```
     pub fn mcts_copy(&self) -> Self {
@@ -329,6 +336,7 @@ impl AbaloneGame {
     ///
     /// # Examples
     /// ```rust
+    /// # use abalone::game::AbaloneGame;
     /// let black_count = AbaloneGame::count_marbles(BELGIAN_DAISY, 2);
     /// ```
     pub fn count_marbles(board: Board, color_code: i8) -> u8 {
@@ -356,6 +364,7 @@ impl AbaloneGame {
     ///
     /// # Examples
     /// ```rust
+    /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
     /// let is_valid = AbaloneGame::validate_board(BELGIAN_DAISY);
     /// ```
     pub fn validate_board(board: Board) -> bool {
@@ -404,6 +413,7 @@ impl AbaloneGame {
     ///
     /// # Examples
     /// ```rust
+    /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
     /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let is_finished = abalone.get_game_ended();
     /// ```
@@ -421,6 +431,7 @@ impl AbaloneGame {
     ///
     /// # Examples
     /// ```rust
+    /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
     /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let game_result = abalone.get_game_result();
     /// ```
@@ -432,7 +443,8 @@ impl AbaloneGame {
     ///
     /// # Examples
     /// ```rust
-    /// let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
+    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let is_black_to_move = abalone.get_black_move();
     /// ```
     pub fn get_black_tomove(&self) -> bool {
@@ -443,8 +455,8 @@ impl AbaloneGame {
     ///
     /// # Examples
     /// ```rust
-    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
-    /// let is_black_to_move = abalone.get_black_move();
+    /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
+    /// let inversed = AbaloneGame::rotate_board(BELGIAN_DAISY);
     /// ```
     pub fn rotate_board(board: Board) -> Board {
         let mut rotated: Board = [[0; BOARD_SIZE]; BOARD_SIZE];
@@ -471,6 +483,7 @@ impl AbaloneGame {
     ///
     /// # Examples
     /// ```rust
+    /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
     /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let whites_perspective = abalone.get_rotated_state();
     /// ```
@@ -494,6 +507,7 @@ impl AbaloneGame {
     /// # Examples
     ///
     /// ```rust
+    /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
     /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let (pov_state, move_ids) = abalone.calc_reasonalbe_moves();
     /// ```
@@ -693,6 +707,7 @@ impl AbaloneGame {
     /// # Examples
     ///
     /// ```rust
+    /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
     /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// abalone.calc_reasonalbe_moves();
     /// let chosen_sate = abalone.get_next_position(0);
@@ -719,6 +734,7 @@ impl AbaloneGame {
     ///
     /// # Examples
     /// ```
+    /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
     /// # let mut abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let new_board = [
     ///     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
@@ -788,6 +804,7 @@ impl AbaloneGame {
     /// # Examples
     ///
     /// ```
+    /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
     /// # let mut abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// (_pov_state, _move_ids) = abalone.calc_reasonalbe_moves();
     /// abalone.update_by_id(0);
@@ -808,6 +825,7 @@ impl AbaloneGame {
     /// # Examples
     /// 
     /// ```rust
+    /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
     /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// abalone.end_with_result(1);
     /// ```

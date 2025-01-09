@@ -2,7 +2,7 @@
 
 Author: Harald Locke <haraldlocke@gmx.de>
 
-## summary
+## Summary
 
 Abalone implementation and an agent for playing the game using tensorflow &amp; MCTS based on the concept of Alpha-Zero.
 This library is a rust version of [pyai_abalone](https://pypi.org/project/pyai-abalone/)

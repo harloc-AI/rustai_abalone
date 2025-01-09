@@ -146,7 +146,7 @@ impl MagisterLudi {
     /// # Examples
     /// 
     /// ```rust
-    /// # let mut magister_ludi = abalone::player::MagisterLudi::new(game::BELGIAN_DAISY, None, 10, 5, 1, 5);
+    /// # let mut magister_ludi = abalone::player::MagisterLudi::new(abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
     /// magister_ludi.start_new_game(abalone::game::BELGIAN_DAISY);
     /// # magister_ludi.stop_execution();
     /// ```
