@@ -1,9 +1,9 @@
 # RustAI Abalone
 
-[![Rust](https://github.com/harloc-AI/rustai_abalones/workflows/Rust/badge.svg)](https://github.com/harloc-AI/rustai_abalones/actions)
-[![Latest version](https://img.shields.io/crates/v/rustai_abalones.svg)](https://crates.io/crates/rustai_abalones)
-[![Documentation](https://docs.rs/rustai_abalones/badge.svg)](https://docs.rs/rustai_abalones)
-![License](https://img.shields.io/crates/l/rustai_abalones.svg)
+[![Rust](https://github.com/harloc-AI/rustai_abalone/workflows/Rust/badge.svg)](https://github.com/harloc-AI/rustai_abalone/actions)
+[![Latest version](https://img.shields.io/crates/v/rustai_abalone.svg)](https://crates.io/crates/rustai_abalone)
+[![Documentation](https://docs.rs/rustai_abalone/badge.svg)](https://docs.rs/rustai_abalone)
+![License](https://img.shields.io/crates/l/rustai_abalone.svg)
 
 Author: Harald Locke <haraldlocke@gmx.de>
 
