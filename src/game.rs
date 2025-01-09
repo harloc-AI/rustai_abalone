@@ -336,8 +336,9 @@ impl AbaloneGame {
     ///
     /// # Examples
     /// ```rust
-    /// # use abalone::game::AbaloneGame;
+    /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
     /// let black_count = AbaloneGame::count_marbles(BELGIAN_DAISY, 2);
+    /// assert_eq!(black_count, 14);
     /// ```
     pub fn count_marbles(board: Board, color_code: i8) -> u8 {
         let mut count: u8 = 0;
@@ -445,7 +446,7 @@ impl AbaloneGame {
     /// ```rust
     /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
     /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
-    /// let is_black_to_move = abalone.get_black_move();
+    /// let is_black_to_move = abalone.get_black_tomove();
     /// ```
     pub fn get_black_tomove(&self) -> bool {
         self.black_tomove
@@ -508,7 +509,7 @@ impl AbaloneGame {
     ///
     /// ```rust
     /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
-    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// # let mut abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let (pov_state, move_ids) = abalone.calc_reasonalbe_moves();
     /// ```
     pub fn calc_reasonalbe_moves(&mut self) -> (Board, Vec<usize>) {
@@ -708,7 +709,7 @@ impl AbaloneGame {
     ///
     /// ```rust
     /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
-    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// # let mut abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// abalone.calc_reasonalbe_moves();
     /// let chosen_sate = abalone.get_next_position(0);
     /// ```
@@ -806,7 +807,7 @@ impl AbaloneGame {
     /// ```
     /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
     /// # let mut abalone = AbaloneGame::new(BELGIAN_DAISY);
-    /// (_pov_state, _move_ids) = abalone.calc_reasonalbe_moves();
+    /// let (_pov_state, _move_ids) = abalone.calc_reasonalbe_moves();
     /// abalone.update_by_id(0);
     /// ```
     /// # Panics
@@ -826,7 +827,7 @@ impl AbaloneGame {
     /// 
     /// ```rust
     /// # use abalone::game::{AbaloneGame, BELGIAN_DAISY};
-    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// # let mut abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// abalone.end_with_result(1);
     /// ```
     pub fn end_with_result(&mut self, result: i8) {
