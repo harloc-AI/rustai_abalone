@@ -16,10 +16,6 @@ The reasons for its creation is to run the MCTS at a decent speed without having
 The current version of the crate is rather build for people interested in machine learning and Abalone enthusiasts as it does
 not provide any GUI or other meaningful ways to play as a human.
 
-## Documentation
-
-
-
 ## Future changes
 
 I intend to make it possible to play against the AI.
