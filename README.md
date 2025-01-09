@@ -1,5 +1,10 @@
 # RustAI Abalone
 
+[![Rust](https://github.com/harloc-AI/rustai_abalones/workflows/Rust/badge.svg)](https://github.com/harloc-AI/rustai_abalones/actions)
+[![Latest version](https://img.shields.io/crates/v/rustai_abalones.svg)](https://crates.io/crates/rustai_abalones)
+[![Documentation](https://docs.rs/rustai_abalones/badge.svg)](https://docs.rs/rustai_abalones)
+![License](https://img.shields.io/crates/l/rustai_abalones.svg)
+
 Author: Harald Locke <haraldlocke@gmx.de>
 
 ## Summary
@@ -10,6 +15,10 @@ The reasons for its creation is to run the MCTS at a decent speed without having
 
 The current version of the crate is rather build for people interested in machine learning and Abalone enthusiasts as it does
 not provide any GUI or other meaningful ways to play as a human.
+
+## Documentation
+
+
 
 ## Future changes
 

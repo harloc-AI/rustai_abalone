@@ -72,8 +72,8 @@ impl MagisterLudi {
     /// # Examples
     /// 
     /// ```rust
-    /// use abalone::player::MagisterLudi;
-    /// let mut magister_ludi = MagisterLudi::new(abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
+    /// use rustai_abalone::player::MagisterLudi;
+    /// let mut magister_ludi = MagisterLudi::new(rustai_abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
     /// # magister_ludi.stop_execution();
     /// ```
     /// 
@@ -146,8 +146,8 @@ impl MagisterLudi {
     /// # Examples
     /// 
     /// ```rust
-    /// # let mut magister_ludi = abalone::player::MagisterLudi::new(abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
-    /// magister_ludi.start_new_game(abalone::game::BELGIAN_DAISY);
+    /// # let mut magister_ludi = rustai_abalone::player::MagisterLudi::new(rustai_abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
+    /// magister_ludi.start_new_game(rustai_abalone::game::BELGIAN_DAISY);
     /// # magister_ludi.stop_execution();
     /// ```
     pub fn start_new_game(&mut self, board: game::Board) {
@@ -170,7 +170,7 @@ impl MagisterLudi {
     /// # Examples
     ///
     /// ```rust
-    /// # let mut magister_ludi = abalone::player::MagisterLudi::new(abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
+    /// # let mut magister_ludi = rustai_abalone::player::MagisterLudi::new(rustai_abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
     /// let next_state = [
     ///     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     ///     [3, 3, 3, 3, 3, 1, 1, 0, 2, 2, 3],
@@ -202,9 +202,9 @@ impl MagisterLudi {
     /// # Examples
     ///
     /// ```rust
-    /// # let mut magister_ludi = abalone::player::MagisterLudi::new(abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
+    /// # let mut magister_ludi = rustai_abalone::player::MagisterLudi::new(rustai_abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
     /// let next_state = magister_ludi.own_move();
-    /// assert!(abalone::game::AbaloneGame::validate_board(next_state));
+    /// assert!(rustai_abalone::game::AbaloneGame::validate_board(next_state));
     /// # magister_ludi.stop_execution();
     /// ```
     /// 
@@ -426,7 +426,7 @@ impl MagisterLudi {
     /// # Examples
     /// 
     /// ```rust
-    /// # let mut magister_ludi = abalone::player::MagisterLudi::new(abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
+    /// # let mut magister_ludi = rustai_abalone::player::MagisterLudi::new(rustai_abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
     /// let all_active = magister_ludi.check_threads_all_active();
     /// # magister_ludi.stop_execution();
     /// ```
@@ -565,7 +565,7 @@ impl MagisterLudi {
     /// # Examples
     ///
     /// ```rust
-    /// # let mut magister_ludi = abalone::player::MagisterLudi::new(abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
+    /// # let mut magister_ludi = rustai_abalone::player::MagisterLudi::new(rustai_abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
     /// magister_ludi.stop_execution();
     /// ```
     pub fn stop_execution(&mut self) {

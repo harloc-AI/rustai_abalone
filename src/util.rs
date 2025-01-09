@@ -57,7 +57,7 @@ fn download_and_extract_zip(url: &str, output_dir: &str) -> Result<(), Box<dyn s
 /// # Examples
 /// 
 /// ```rust
-/// use abalone::util::download_model;
+/// use rustai_abalone::util::download_model;
 /// let model_path = download_model(".");
 /// ```
 pub fn download_model(output_dir: &str) -> String {
@@ -95,7 +95,7 @@ pub fn download_model(output_dir: &str) -> String {
 /// # Examples
 /// 
 /// ```rust
-/// use abalone::util::check_model_present;
+/// use rustai_abalone::util::check_model_present;
 /// let checked_path = check_model_present(".");
 /// ```
 pub fn check_model_present(model_str: &str) -> Option<String> {

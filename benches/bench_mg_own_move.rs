@@ -1,5 +1,5 @@
 use std::path::Path;
-use abalone::player;
+use rustai_abalone::player;
 use criterion::{criterion_group, criterion_main, Criterion};
 
 fn criterion_benchmark(c: &mut Criterion) {
