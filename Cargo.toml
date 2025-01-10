@@ -1,6 +1,6 @@
 [package]
 name = "rustai_abalone"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 exclude = ["target/", "old_rust_files/", "Cargo.lock", "*.zip", "magister_zero_unwrap_save/"]
 authors = ["Harald Locke"]
@@ -12,6 +12,9 @@ readme = "README.md"
 keywords = ["AI", "game", "Abalone"]
 categories = ["games", "science"]
 
+[package.metadata.docs.rs]
+features = ["private-docs-rs"]
+
 [dependencies]
 phf = { version = "0.11", features = ["macros"] }
 tensorflow = "0.21.0"
@@ -22,6 +25,9 @@ crossbeam-channel = "0.5"
 
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }
+
+[features]
+private-docs-rs = [] # DO NOT RELY ON THIS
 
 [[bench]]
 name = "bench_mg_own_move"
