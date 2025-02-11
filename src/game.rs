@@ -1,3 +1,6 @@
+use std::cmp::Ordering;
+use std::collections::{HashMap, HashSet};
+
 use super::marble_moves;
 
 /// number of rows and column for every board representation
@@ -36,7 +39,7 @@ pub const BELGIAN_DAISY: Board = [
 ];
 
 /// coordinate on an Abalone board
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Hash)]
 pub struct Coord {
     pub x: usize,
     pub y: usize,
@@ -96,6 +99,26 @@ impl Coord {
                 _ => panic!("illegal move created"),
             },
         )
+    }
+
+    /// checks whether the coordinate is in the general possible range for board
+    /// so both values x and y are larger than 0 and smaller than 10
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// use rustai_abalone::game::{Coord, MarbleMove};
+    /// let coord_in = Coord::new(2, 6);
+    /// assert!(coord_in.in_board_range());
+    /// 
+    /// let coord_out = Coord::new(1, 14);
+    /// assert!(!coord_out.in_board_range());
+    /// ```
+    pub fn in_board_range(&self) -> bool {
+        if (self.x > 0 || self.x < BOARD_MAXID) && (self.y > 0 || self.y < BOARD_MAXID) {
+            return true;
+        }
+        false
     }
 }
 
@@ -173,8 +196,61 @@ impl std::ops::Sub<MarbleMove> for Coord {
     }
 }
 
+impl std::ops::Sub<Coord> for Coord {
+    type Output = MarbleMove;
+
+    /// calculates a `MarbleMove` by the difference of two coordinates
+    /// 
+    /// the function assumes that the marbles are neighbors on the hexagonal board.
+    /// If this is not the case the resulting marble move will not make sense
+    ///
+    /// # Arguments
+    ///
+    /// * `rhs` - the marble move to be performed
+    ///
+    /// # Returns
+    /// * `difference` - the move that is necessary to move form one coordinate to the neighboring one
+    ///
+    /// # Examples
+    /// ```rust
+    /// use rustai_abalone::game::{Coord, MarbleMove};
+    /// let orig_coord = Coord::new(4, 4);
+    /// let new_coord = Coord::new(5, 4);
+    /// let marb_move = new_coord - orig_coord; // dx == 1, dy == 0 for this case
+    /// ```
+    fn sub(self, rhs: Self) -> MarbleMove {
+        let dx: i8 = if self.x > rhs.x { 1 } else { if self.x < rhs.x { -1 } else { 0 }};
+        let dy: i8 = if self.y > rhs.y { 1 } else { if self.y < rhs.y { -1 } else { 0 }};
+        MarbleMove{ dx, dy }
+    }
+}
+
+impl PartialEq for Coord {
+    fn eq(&self, other: &Self) -> bool {
+        self.x == other.x && self.y == other.y
+    }
+}
+
+impl PartialOrd for Coord {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl  Ord for Coord {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.x == other.x {
+            return self.y.cmp(&other.y);
+        }
+        self.x.cmp(&other.x)
+    }
+    
+}
+
+impl Eq for Coord {}
+
 /// stores values for a move operation
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Hash, PartialEq, Eq)]
 pub struct MarbleMove {
     /// position change in x direction
     pub dx: i8,
@@ -328,6 +404,24 @@ impl AbaloneGame {
         }
     }
 
+    /// returns all possible marble moves for the game implementation
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// # use rustai_abalone::game::{AbaloneGame, Coord};
+    /// let abalone_moves = AbaloneGame::get_game_moves();
+    /// let init_coord = Coord::new(5, 5);
+    /// let mut moving_coord = init_coord.clone()
+    /// for marble_move in abalone_moves {
+    ///     moving_coord += marble_move;
+    /// }
+    /// assert_eq!(init_coord, moving_coord)
+    /// ```
+    pub fn get_game_moves() -> [MarbleMove; 6] {
+        Self::MOVES
+    }
+
     /// counts the marbles, empty fields or off-board position on a given board
     ///
     /// # Arguments
@@ -350,6 +444,59 @@ impl AbaloneGame {
             }
         }
         count
+    }
+
+    /// returns the coordinates for black marbles, white marbles and empty fields
+    /// from given position
+    /// 
+    /// # Returns
+    /// * `black_coords` - coordinates of all black marbles
+    /// * `white_coords` - coordinates of all white marbles
+    /// * `empty_coords` - coordinates of all empty fields
+    /// 
+    /// # Examples
+    /// ```rust
+    /// # use rustai_abalone::game::{AbaloneGame, BELGIAN_DAISY};
+    /// let (blacks, whites, empties) = AbaloneGame::coords_by_type(BELGIAN_DAISY);
+    /// assert_eq!(blacks.len(), 14);
+    /// assert_eq!(whites.len(), 14);
+    /// ```
+    pub fn coords_by_type(board: Board) -> (Vec<Coord>, Vec<Coord>, Vec<Coord>) {
+        let mut black_coords: Vec<Coord> = Vec::with_capacity(14);
+        let mut white_coords: Vec<Coord> = Vec::with_capacity(14);
+        // there are 61 fields and before there have to be at least 9 + 8 = 17 marbles on the board
+        let mut empty_coords: Vec<Coord> = Vec::with_capacity(44);
+        for row in 1..BOARD_MAXID {
+            for col in 1..BOARD_MAXID {
+                match board[row][col] {
+                    Self::BLACK => black_coords.push(Coord::new(row, col)),
+                    Self::WHITE => white_coords.push(Coord::new(row, col)),
+                    Self::EMPTY => empty_coords.push(Coord::new(row, col)),
+                    _ => {}
+                }
+            }
+        }
+        (black_coords, white_coords, empty_coords)
+    }
+
+    /// returns the coordinates for black marbles, white marbles and empty fields
+    /// for the current game state
+    /// 
+    /// # Returns
+    /// * `black_coords` - coordinates of all black marbles
+    /// * `white_coords` - coordinates of all white marbles
+    /// * `empty_coords` - coordinates of all empty fields
+    /// 
+    /// # Examples
+    /// ```rust
+    /// # use rustai_abalone::game::{AbaloneGame, BELGIAN_DAISY};
+    /// abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// let (blacks, whites, empties) = abalone.get_coords_by_type();
+    /// assert_eq!(blacks.len(), 14);
+    /// assert_eq!(whites.len(), 14);
+    /// ```
+    pub fn get_coords_by_type(&self) -> (Vec<Coord>, Vec<Coord>, Vec<Coord>) {
+        Self::coords_by_type(self.board)
     }
 
     /// checks whether the given board is a valid Abalone position
@@ -443,6 +590,7 @@ impl AbaloneGame {
     /// standard getter, returns whether black is to move next
     ///
     /// # Examples
+    /// 
     /// ```rust
     /// # use rustai_abalone::game::{AbaloneGame, BELGIAN_DAISY};
     /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
@@ -452,7 +600,90 @@ impl AbaloneGame {
         self.black_tomove
     }
 
-    /// standard getter, returns whether black is to move next
+    /// standard getter for marbles lost by black and white
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// # use rustai_abalone::game::{AbaloneGame, BELGIAN_DAISY};
+    /// let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// let (black_loss, white_loss) = abalone.get_black_white_loss();
+    /// assert_eq!(black_loss, white_loss);
+    /// assert_eq!(black_loss, 0);
+    /// ```
+    pub fn get_black_white_loss(&self) -> (u8, u8) {
+        (self.black_loss, self.white_loss)
+    }
+
+    /// gives coordinates for all positions which are not equal between the given board and the game state
+    /// 
+    /// # Arguments
+    /// 
+    /// `board` - board state that is compared with the current game state
+    /// `marked` - //TODO
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// # use rustai_abalone::game::{AbaloneGame, BELGIAN_DAISY};
+    /// let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// let mut selected = std::collections::HashSet::new();
+    /// selected.insert(Coord::new(7, 2));
+    /// selected.insert(Coord::new(8, 2));
+    /// selected.insert(Coord::new(9, 2));
+    /// let new_board = [
+    ///     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+    ///     [3, 3, 3, 3, 3, 1, 1, 0, 2, 2, 3],
+    ///     [3, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3],
+    ///     [3, 3, 3, 0, 1, 1, 0, 2, 2, 0, 3],
+    ///     [3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+    ///     [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+    ///     [3, 0, 2, 0, 0, 0, 0, 0, 0, 3, 3],
+    ///     [3, 0, 2, 2, 0, 1, 1, 0, 3, 3, 3],
+    ///     [3, 2, 2, 2, 1, 1, 1, 3, 3, 3, 3],
+    ///     [3, 2, 0, 0, 1, 1, 3, 3, 3, 3, 3],
+    ///     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+    /// ];
+    /// abalone.differences_to_state(new_board, &mut selected);
+    /// assert_eq!(selected.len(), 4)
+    /// ```
+    pub fn differences_to_state(&self, board: Board, marked: &mut HashSet<Coord>) {
+        let enemy_color = if self.black_tomove {Self::WHITE} else {Self::BLACK};
+        let init_marked = marked.len();
+        let mut enemy_moved = false;
+        let mut inline_origin = Coord::new(1, 1);
+        for x in 0..BOARD_SIZE {
+            for y in 0..BOARD_SIZE {
+                if board[x][y] != self.board[x][y] {
+                    if self.board[x][y] == enemy_color {
+                        enemy_moved = true;
+                    }
+                    if board[x][y] == Self::EMPTY {
+                        inline_origin = Coord::new(x, y);
+                    }
+                    marked.insert(Coord::new(x, y));
+                }
+            }
+        }
+        // only special case 3-vs-2-push
+        // if an enemy marble was moved it has to be a inline move
+        if enemy_moved && init_marked == 3 {
+            for marb_move in Self::MOVES {
+                // the only field leaving an empty field behind is the base if the marble line
+                let next_pos = inline_origin + marb_move;
+                // making the original move from this base will result in an already added position
+                if marked.contains(&next_pos) {
+                    let color_pos = inline_origin.multi_move(&marb_move, 4);
+                    if board[color_pos.x][color_pos.y] == enemy_color {
+                        marked.insert(inline_origin.multi_move(&marb_move, 4));
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    /// switches the colors of a board state and inverses the marble positions
     ///
     /// # Examples
     /// ```rust
@@ -475,6 +706,11 @@ impl AbaloneGame {
         rotated
     }
 
+    /// standard get methode to obtain the current game state
+    pub fn get_state(&self) -> Board {
+        self.board
+    }
+
     /// returns the current board state such that it is seen from white's perspective
     ///
     /// this function is meant to return state such that it is viewed from white's
@@ -493,6 +729,217 @@ impl AbaloneGame {
             return Self::rotate_board(self.board);
         }
         self.board
+    }
+
+    /// returns the current board state where colors for marbles were switched
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// # use rustai_abalone::game::{AbaloneGame, BELGIAN_DAISY};
+    /// let switched = AbaloneGame::switch_colors(BELGIAN_DAISY);
+    /// ```
+    pub fn switch_colors(board: Board) -> Board {
+        let mut switched: Board = [[0; BOARD_SIZE]; BOARD_SIZE];
+        for x in 0..BOARD_SIZE {
+            for y in 0..BOARD_SIZE {
+                if board[x][y] == Self::WHITE {
+                    switched[x][y] = Self::BLACK;
+                } else if board[x][y] == Self::BLACK {
+                    switched[x][y] = Self::WHITE;
+                } else {
+                    switched[x][y] = board[x][y];
+                }
+            }
+        }
+        switched
+    }
+
+    /// returns the current state with colors switched
+    /// 
+    /// this function is to predict move operations with always considering
+    /// whtie as the color that has to move.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// # use rustai_abalone::game::{AbaloneGame, BELGIAN_DAISY};
+    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// let switched_state = abalone.get_switched_state();
+    /// ```
+    pub fn get_switched_state(&self) -> Board {
+        if self.black_tomove {
+            return Self::switch_colors(self.board);
+        }
+        self.board
+    }
+
+    /// calculates possible moves for the given marble coordinates
+    /// 
+    /// this function will return a vector containing all possible follow-up
+    /// position if the selected marbles will be moved with the corresponding
+    /// `MarbleMove`. If no valid moves are possible the returned vector will be empty.
+    /// Moves are not valid if
+    /// * more than three marbles are selected
+    /// * one or more of the selected marbles are not of the active color
+    /// * not all marbles are in one line
+    /// * one of the coordinates does not point to valid board position
+    /// 
+    /// # Arguments
+    /// 
+    /// * `start_coords` - coordinates of the selected marbles
+    /// 
+    /// # Returns
+    /// 
+    /// vector of tuples, each tuple contains
+    /// * `marb_move` - the move the selected marbles will make to reach the position given
+    /// * `next_state` - the corresponding state that will be reachwed after the move
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// # use rustai_abalone::game::{AbaloneGame, BELGIAN_DAISY};
+    /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// let coords = vec![Coord::new(3, 7), Coord::new(3, 8)];
+    /// let possible_moves = abalone.calc_coord_moves(coords);
+    /// ```
+    pub fn calc_coord_moves(&self, start_coords: Vec<Coord>) -> HashMap<MarbleMove, Board> {
+        let mut results: HashMap<MarbleMove, Board> = HashMap::with_capacity(6);
+        match start_coords.len() {
+            1 => self.single_coord_moves(start_coords, &mut results),
+            2|3 => self.multi_coord_moves(start_coords, &mut results),
+            _ => {}
+        }
+        // if black is to move, it is necessary to switch the colors back
+        if self.black_tomove {
+            for value in results.values_mut() {
+                *value = Self::switch_colors(*value);
+            }
+        }
+        return results;
+    }
+
+    fn single_coord_moves(&self, mut start_coords: Vec<Coord>, results: &mut HashMap<MarbleMove, Board>) {
+        let start_coord = start_coords.pop().unwrap();
+        // be sure that the given position can be valid at all
+        if !start_coord.in_board_range() {
+            return;
+        }
+        let switched = self.get_switched_state();
+        // if the chosen position is not a white marble just return
+        if switched[start_coord.x][start_coord.y] != Self::WHITE {
+            return;
+        }
+        for marb_move in Self::MOVES.iter() {
+            let target = start_coord + *marb_move;
+            if switched[target.x][target.y] == Self::EMPTY {
+                let mut new_board = switched;
+                new_board[start_coord.x][start_coord.y] = Self::EMPTY;
+                new_board[target.x][target.y] = Self::WHITE;
+                results.insert(marb_move.clone(), new_board);
+            }
+        }
+    }
+
+    fn multi_coord_moves(&self, mut start_coords: Vec<Coord>, results: &mut HashMap<MarbleMove, Board>) {
+        // sort marbles first
+        start_coords.sort();
+        let mut row_check = false;
+        let first = start_coords[0];
+        // if the first marble is not on a valid field just return
+        if !first.in_board_range() {
+            return;
+        }
+        let second = start_coords[1];
+        let last = start_coords[start_coords.len()-1];
+        let switched = self.get_switched_state();
+        // if one of the marbles is not a white marble return
+        for sc in start_coords.as_slice() {
+            if switched[sc.x][sc.y] != Self::WHITE {
+                return;
+            }
+        }
+
+        for marb_move in Self::MOVES.iter() {
+            let forward_pos = first + *marb_move;
+            let backward_pos = first - *marb_move;
+            if forward_pos == second {
+                // first and second marble are fine at this point
+                for index in 2..start_coords.len() {
+                    if start_coords[index] != first.multi_move(marb_move, index) {
+                        results.clear();
+                        return;
+                    }
+                }
+                // if function did not return, row_check worked
+                row_check = true;
+                // if second is in move direction, then 'last' is the front marble
+                self.inline_move(switched, last, first, start_coords.len(), marb_move.clone(), results);
+            } else if backward_pos == second {
+                // if second is in opposite of move direction, then 'first' is the front marble
+                self.inline_move(switched,first, last, start_coords.len(), marb_move.clone(), results);
+            } else {
+                // in any other case broadside moves are performed
+                let mut pos_state = switched;
+                let mut to_push = true;
+                for marb_pos in start_coords.as_slice() {
+                    let new_pos = *marb_pos + *marb_move;
+                    if switched[new_pos.x][new_pos.y] == Self::EMPTY {
+                        pos_state[marb_pos.x][marb_pos.y] = Self::EMPTY;
+                        pos_state[new_pos.x][new_pos.y] = Self::WHITE;
+                    } else {
+                        to_push = false;
+                        break;
+                    }
+                }
+                if to_push {
+                    results.insert(marb_move.clone(), pos_state);
+                }
+            }
+        
+        if !row_check {
+            results.clear();
+        }
+
+        }
+    }
+
+    fn inline_move(&self, state: Board, front: Coord, back: Coord, num_marbs: usize, m_move: MarbleMove, results: &mut HashMap<MarbleMove, Board>) {
+        let tar1 = front + m_move;
+        if state[tar1.x][tar1.y] == Self::EMPTY {
+            let mut pos_state = state;
+            pos_state[tar1.x][tar1.y] = Self::WHITE;
+            pos_state[back.x][back.y] = Self::EMPTY;
+            results.insert(m_move, pos_state);
+        } else if state[tar1.x][tar1.y] == Self::BLACK {
+            let tar2 = tar1 + m_move;
+            if state[tar2.x][tar2.y] == Self::EMPTY {
+                let mut pos_state = state;
+                pos_state[tar2.x][tar2.y] = Self::BLACK;
+                pos_state[tar1.x][tar1.y] = Self::WHITE;
+                pos_state[back.x][back.y] = Self::EMPTY;
+                results.insert(m_move, pos_state);
+            } else if state[tar2.x][tar2.y] == Self::OFF_BOARD {
+                let mut pos_state = state;
+                pos_state[tar1.x][tar1.y] = Self::WHITE;
+                pos_state[back.x][back.y] = Self::EMPTY;
+                results.insert(m_move, pos_state);
+            } else if state[tar2.x][tar2.y] == Self::BLACK && num_marbs > 2 {
+                let tar3 = tar2 + m_move;
+                if state[tar3.x][tar3.y] == Self::EMPTY {
+                    let mut pos_state = state;
+                    pos_state[tar3.x][tar3.y] = Self::BLACK;
+                    pos_state[tar1.x][tar1.y] = Self::WHITE;
+                    pos_state[back.x][back.y] = Self::EMPTY;
+                    results.insert(m_move, pos_state);
+                } else if state[tar3.x][tar3.y] == Self::OFF_BOARD {
+                    let mut pos_state = state;
+                    pos_state[tar1.x][tar1.y] = Self::WHITE;
+                    pos_state[back.x][back.y] = Self::EMPTY;
+                    results.insert(m_move, pos_state);
+                }
+            }
+        }
     }
 
     /// calculates the possible child states from the current board state
@@ -758,6 +1205,7 @@ impl AbaloneGame {
         }
 
         self.board = new_board;
+        self.black_tomove = !self.black_tomove;
 
         let mut noloss: bool = true;
         let white_newloss = Self::MARBLES_MAX - Self::count_marbles(new_board, Self::WHITE);

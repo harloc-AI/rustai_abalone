@@ -88,7 +88,7 @@ mod tests {
     fn test_magister_ludi() {
         let mut magi_ludi = MagisterLudi::new(game::BELGIAN_DAISY, None, 10, 5, 1, 5);
         println!("initialized succesfully");
-        let chosen_move = magi_ludi.own_move();
+        let chosen_move = magi_ludi.own_move(true);
         assert!(AbaloneGame::validate_board(chosen_move));
         println!("Finished move");
         magi_ludi.start_new_game(game::BELGIAN_DAISY);

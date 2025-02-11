@@ -20,7 +20,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     let model_path_str = model_path.to_str().unwrap();
     let mut magi_ludi = player::MagisterLudi::new(board, Some(model_path_str), 200, 10, 7, 13);
     c.bench_function("test magister own_move", |b| {
-        b.iter(|| magi_ludi.own_move())
+        b.iter(|| magi_ludi.own_move(true))
     });
 }
 

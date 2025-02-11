@@ -1,4 +1,4 @@
-use crate::game::Board;
+use crate::game::{AbaloneGame, Board};
 use rand::distributions::WeightedIndex;
 use rand::prelude::{thread_rng, Distribution};
 use rand::seq::SliceRandom;
@@ -166,6 +166,7 @@ impl MagisterLudi {
     /// # Argmuents
     ///
     /// * `new_state` - next state of currently played game. The agent will not check whether this position is valid
+    /// * `receive_pov` - if true, the next state will be considered to be from white's point of view
     ///
     /// # Examples
     ///
@@ -184,16 +185,27 @@ impl MagisterLudi {
     ///     [3, 2, 2, 0, 1, 1, 3, 3, 3, 3, 3],
     ///     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     /// ];
-    /// magister_ludi.external_move(next_state);
+    /// magister_ludi.external_move(next_state, true);
     /// # magister_ludi.stop_execution();
     /// ```
-    pub fn external_move(&mut self, new_state: Board) {
+    pub fn external_move(&mut self, mut new_state: Board, receive_pov: bool) {
+        // do nothing if game has ended
+        if self.abalone.get_game_ended() {
+            return;
+        }
         // consider rotation
+        if !receive_pov && self.abalone.get_black_tomove() {
+            new_state = AbaloneGame::rotate_board(new_state)
+        }
         self.abalone.update_state(new_state);
         self.check_game_ended();
     }
 
     /// lets the agent know that a move was made by an external source and change its game representation accordingly
+    /// 
+    /// # Arguments
+    /// 
+    /// * `return_pov` - if true, chosen state will be returned from white's point of view
     ///
     /// # Returns
     ///
@@ -203,7 +215,7 @@ impl MagisterLudi {
     ///
     /// ```rust
     /// # let mut magister_ludi = rustai_abalone::player::MagisterLudi::new(rustai_abalone::game::BELGIAN_DAISY, None, 10, 5, 1, 5);
-    /// let next_state = magister_ludi.own_move();
+    /// let next_state = magister_ludi.own_move(true);
     /// assert!(rustai_abalone::game::AbaloneGame::validate_board(next_state));
     /// # magister_ludi.stop_execution();
     /// ```
@@ -211,7 +223,7 @@ impl MagisterLudi {
     /// # Panics
     /// 
     /// will panic if one or more of the MCTS daemon threads are not active anymore
-    pub fn own_move(&mut self) -> Board {
+    pub fn own_move(&mut self, return_pov: bool) -> Board {
         if !self.check_threads_all_active() {
             panic!("Cannot execute move as there are issues with the activity of MCTS threads")
         }
@@ -219,7 +231,12 @@ impl MagisterLudi {
         self.push_to_queue();
         let chosen_state = self.choose_next_move();
         self.check_game_ended();
-        chosen_state
+        // chosen_state is from white's point of view
+        if return_pov {
+            return chosen_state;
+        }
+        // otherwise return state as it is
+        self.abalone.get_state()
     }
 
     // selects the child state which should be simulated from the root state
