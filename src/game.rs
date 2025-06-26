@@ -38,8 +38,39 @@ pub const BELGIAN_DAISY: Board = [
     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
 ];
 
+/// classic starting position for Abalone
+pub const CLASSIC: Board = [
+    [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+    [3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 3],
+    [3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 3],
+    [3, 3, 3, 0, 0, 1, 1, 1, 0, 0, 3],
+    [3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+    [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+    [3, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3],
+    [3, 0, 0, 2, 2, 2, 0, 0, 3, 3, 3],
+    [3, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3],
+    [3, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3],
+    [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+];
+
+/// common "German Daisy" starting position for competetive play
+pub const GERMAN_DAISY: Board = [
+    [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+    [3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 3],
+    [3, 3, 3, 3, 1, 1, 0, 0, 2, 2, 3],
+    [3, 3, 3, 1, 1, 1, 0, 2, 2, 2, 3],
+    [3, 3, 0, 1, 1, 0, 0, 2, 2, 0, 3],
+    [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+    [3, 0, 2, 2, 0, 0, 1, 1, 0, 3, 3],
+    [3, 2, 2, 2, 0, 1, 1, 1, 3, 3, 3],
+    [3, 2, 2, 0, 0, 1, 1, 3, 3, 3, 3],
+    [3, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3],
+    [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+];
+
+
 /// coordinate on an Abalone board
-#[derive(Copy, Clone, Hash)]
+#[derive(Debug, Copy, Clone, Hash)]
 pub struct Coord {
     pub x: usize,
     pub y: usize,
@@ -115,7 +146,7 @@ impl Coord {
     /// assert!(!coord_out.in_board_range());
     /// ```
     pub fn in_board_range(&self) -> bool {
-        if (self.x > 0 || self.x < BOARD_MAXID) && (self.y > 0 || self.y < BOARD_MAXID) {
+        if (self.x > 0 && self.x < BOARD_MAXID) && (self.y > 0 && self.y < BOARD_MAXID) {
             return true;
         }
         false
@@ -142,6 +173,45 @@ impl std::ops::Add<MarbleMove> for Coord {
     /// let new_coord = orig_coord + marb_move; // x == 2, y == 1 for this case
     /// ```
     fn add(self, rhs: MarbleMove) -> Self {
+        Self::new(
+            match rhs.dx {
+                1 => self.x + 1,
+                0 => self.x,
+                -1 => self.x - 1,
+                _ => panic!("illegal move created"),
+            },
+            match rhs.dy {
+                1 => self.y + 1,
+                0 => self.y,
+                -1 => self.y - 1,
+                _ => panic!("illegal move created"),
+            },
+        )
+    }
+}
+
+impl std::ops::Add<&MarbleMove> for Coord {
+    type Output = Self;
+
+    /// performs a marble move operation on a coordinate with reference
+    ///
+    /// # Arguments
+    ///
+    /// * `rhs` - the marble move to be performed
+    ///
+    /// # Returns
+    /// * `new_coord` - new Coord struct resulting my "moving" the orignal Coord in the given direction
+    ///
+    /// # Examples
+    /// ```rust
+    /// use rustai_abalone::game::{Coord, MarbleMove};
+    /// let orig_coord = Coord::new(1, 1);
+    /// let marb_moves = vec![MarbleMove::new(1, 0), MarbleMove::new(-1, 0)];
+    /// for marb_move in marb_moves.iter() {
+    ///     let new_coord = orig_coord + marb_move;
+    /// }
+    /// ```
+    fn add(self, rhs: &MarbleMove) -> Self {
         Self::new(
             match rhs.dx {
                 1 => self.x + 1,
@@ -196,6 +266,46 @@ impl std::ops::Sub<MarbleMove> for Coord {
     }
 }
 
+impl std::ops::Sub<&MarbleMove> for Coord {
+    type Output = Self;
+
+    /// performs the opposite of a given marble move operation on a coordinate
+    /// with reference
+    ///
+    /// # Arguments
+    ///
+    /// * `rhs` - the marble move to be performed
+    ///
+    /// # Returns
+    /// * `new_coord` - new Coord struct resulting my "moving" the orignal Coord against the given direction
+    ///
+    /// # Examples
+    /// ```rust
+    /// use rustai_abalone::game::{Coord, MarbleMove};
+    /// let orig_coord = Coord::new(1, 1);
+    /// let marb_moves = vec![MarbleMove::new(1, 0), MarbleMove::new(-1, 0)];
+    /// for marb_move in marb_moves.iter() {
+    ///     let new_coord = orig_coord - marb_move;
+    /// }
+    /// ```
+    fn sub(self, rhs: &MarbleMove) -> Self {
+        Self::new(
+            match rhs.dx {
+                1 => self.x - 1,
+                0 => self.x,
+                -1 => self.x + 1,
+                _ => panic!("illegal move created"),
+            },
+            match rhs.dy {
+                1 => self.y - 1,
+                0 => self.y,
+                -1 => self.y + 1,
+                _ => panic!("illegal move created"),
+            },
+        )
+    }
+}
+
 impl std::ops::Sub<Coord> for Coord {
     type Output = MarbleMove;
 
@@ -224,6 +334,40 @@ impl std::ops::Sub<Coord> for Coord {
         MarbleMove{ dx, dy }
     }
 }
+
+impl std::ops::Sub<&Coord> for Coord {
+    type Output = MarbleMove;
+
+    /// calculates a `MarbleMove` by the difference of two coordinates
+    /// with reference
+    /// 
+    /// the function assumes that the marbles are neighbors on the hexagonal board.
+    /// If this is not the case the resulting marble move will not make sense
+    ///
+    /// # Arguments
+    ///
+    /// * `rhs` - the marble move to be performed
+    ///
+    /// # Returns
+    /// * `difference` - the move that is necessary to move form one coordinate to the neighboring one
+    ///
+    /// # Examples
+    /// ```rust
+    /// use rustai_abalone::game::{Coord, MarbleMove};
+    /// let orig_coord = Coord::new(4, 4);
+    /// let new_coords = vec![Coord::new(5, 4), Coord::new(4, 5)];
+    /// for new_coord in new_coords.iter() {
+    ///     let marb_move = orig_coord - new_coord;
+    /// }
+    /// ```
+    fn sub(self, rhs: &Coord) -> MarbleMove {
+        let dx: i8 = if self.x > rhs.x { 1 } else { if self.x < rhs.x { -1 } else { 0 }};
+        let dy: i8 = if self.y > rhs.y { 1 } else { if self.y < rhs.y { -1 } else { 0 }};
+        MarbleMove{ dx, dy }
+    }
+}
+
+
 
 impl PartialEq for Coord {
     fn eq(&self, other: &Self) -> bool {
@@ -412,11 +556,11 @@ impl AbaloneGame {
     /// # use rustai_abalone::game::{AbaloneGame, Coord};
     /// let abalone_moves = AbaloneGame::get_game_moves();
     /// let init_coord = Coord::new(5, 5);
-    /// let mut moving_coord = init_coord.clone()
+    /// let mut moving_coord = init_coord.clone();
     /// for marble_move in abalone_moves {
-    ///     moving_coord += marble_move;
+    ///     moving_coord = moving_coord + marble_move;
     /// }
-    /// assert_eq!(init_coord, moving_coord)
+    /// assert!(init_coord==moving_coord)
     /// ```
     pub fn get_game_moves() -> [MarbleMove; 6] {
         Self::MOVES
@@ -490,7 +634,7 @@ impl AbaloneGame {
     /// # Examples
     /// ```rust
     /// # use rustai_abalone::game::{AbaloneGame, BELGIAN_DAISY};
-    /// abalone = AbaloneGame::new(BELGIAN_DAISY);
+    /// let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let (blacks, whites, empties) = abalone.get_coords_by_type();
     /// assert_eq!(blacks.len(), 14);
     /// assert_eq!(whites.len(), 14);
@@ -615,22 +759,19 @@ impl AbaloneGame {
         (self.black_loss, self.white_loss)
     }
 
-    /// gives coordinates for all positions which are not equal between the given board and the game state
+    /// gives coordinates for all positions which were influenced by a move which resulted in the
+    /// given board and the game instances' current state state. 
     /// 
     /// # Arguments
     /// 
     /// `board` - board state that is compared with the current game state
-    /// `marked` - //TODO
+    /// `marked` - set of selected marbles (coordinates) which were used for the move
     /// 
     /// # Examples
     /// 
     /// ```rust
-    /// # use rustai_abalone::game::{AbaloneGame, BELGIAN_DAISY};
+    /// # use rustai_abalone::game::{AbaloneGame, BELGIAN_DAISY, Coord};
     /// let abalone = AbaloneGame::new(BELGIAN_DAISY);
-    /// let mut selected = std::collections::HashSet::new();
-    /// selected.insert(Coord::new(7, 2));
-    /// selected.insert(Coord::new(8, 2));
-    /// selected.insert(Coord::new(9, 2));
     /// let new_board = [
     ///     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     ///     [3, 3, 3, 3, 3, 1, 1, 0, 2, 2, 3],
@@ -644,20 +785,25 @@ impl AbaloneGame {
     ///     [3, 2, 0, 0, 1, 1, 3, 3, 3, 3, 3],
     ///     [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     /// ];
-    /// abalone.differences_to_state(new_board, &mut selected);
+    /// let selected = abalone.differences_to_state(new_board);
     /// assert_eq!(selected.len(), 4)
     /// ```
-    pub fn differences_to_state(&self, board: Board, marked: &mut HashSet<Coord>) {
-        let enemy_color = if self.black_tomove {Self::WHITE} else {Self::BLACK};
-        let init_marked = marked.len();
-        let mut enemy_moved = false;
+    pub fn differences_to_state(&self, board: Board) -> HashSet<Coord> {
+        let own_color = if self.black_tomove {Self::BLACK} else {Self::WHITE};
+        let mut marked: HashSet<Coord> = HashSet::with_capacity(6);
         let mut inline_origin = Coord::new(1, 1);
+        let mut inline_target = Coord::new(1, 1);
         for x in 0..BOARD_SIZE {
             for y in 0..BOARD_SIZE {
+                // generally compare differences in given and current state
                 if board[x][y] != self.board[x][y] {
-                    if self.board[x][y] == enemy_color {
-                        enemy_moved = true;
+                    // for an inline move there will be only one field newly occupied by a marble of moved color
+                    // otherwise this coordinate will not be used anyway
+                    if board[x][y] == own_color {
+                        inline_target = Coord::new(x, y);
                     }
+                    // for an inline move there will only be one new empty field
+                    // otherwise this coordinate will not be used anyway
                     if board[x][y] == Self::EMPTY {
                         inline_origin = Coord::new(x, y);
                     }
@@ -665,22 +811,24 @@ impl AbaloneGame {
                 }
             }
         }
-        // only special case 3-vs-2-push
-        // if an enemy marble was moved it has to be a inline move
-        if enemy_moved && init_marked == 3 {
-            for marb_move in Self::MOVES {
-                // the only field leaving an empty field behind is the base if the marble line
-                let next_pos = inline_origin + marb_move;
-                // making the original move from this base will result in an already added position
-                if marked.contains(&next_pos) {
-                    let color_pos = inline_origin.multi_move(&marb_move, 4);
-                    if board[color_pos.x][color_pos.y] == enemy_color {
-                        marked.insert(inline_origin.multi_move(&marb_move, 4));
-                    }
+        // "real" broad-side moves have either 4 or 6 differences in board positions
+        // so all other moves (even a one marble move) can be seen as inline moves
+        if marked.len() < 4 {
+            // if the given board is a valid follow-up state, this difference
+            // will result in the correct move direction
+            let marb_move = inline_target - inline_origin;
+            // despite the origin there are at most 5 positions changed
+            for factor in 1..6usize{
+                let pos = inline_origin.multi_move(&marb_move, factor);
+                // if the current position is empty or off-board for the current state
+                // the "end" of the move was reached
+                if self.board[pos.x][pos.y] == Self::EMPTY || self.board[pos.x][pos.y] == Self::OFF_BOARD {
                     break;
                 }
+                marked.insert(pos);
             }
         }
+        marked
     }
 
     /// switches the colors of a board state and inverses the marble positions
@@ -798,7 +946,7 @@ impl AbaloneGame {
     /// # Examples
     /// 
     /// ```rust
-    /// # use rustai_abalone::game::{AbaloneGame, BELGIAN_DAISY};
+    /// # use rustai_abalone::game::{AbaloneGame, BELGIAN_DAISY, Coord};
     /// # let abalone = AbaloneGame::new(BELGIAN_DAISY);
     /// let coords = vec![Coord::new(3, 7), Coord::new(3, 8)];
     /// let possible_moves = abalone.calc_coord_moves(coords);
@@ -831,7 +979,7 @@ impl AbaloneGame {
             return;
         }
         for marb_move in Self::MOVES.iter() {
-            let target = start_coord + *marb_move;
+            let target = start_coord + marb_move;
             if switched[target.x][target.y] == Self::EMPTY {
                 let mut new_board = switched;
                 new_board[start_coord.x][start_coord.y] = Self::EMPTY;
@@ -861,8 +1009,8 @@ impl AbaloneGame {
         }
 
         for marb_move in Self::MOVES.iter() {
-            let forward_pos = first + *marb_move;
-            let backward_pos = first - *marb_move;
+            let forward_pos = first + marb_move;
+            let backward_pos = first - marb_move;
             if forward_pos == second {
                 // first and second marble are fine at this point
                 for index in 2..start_coords.len() {
@@ -883,7 +1031,7 @@ impl AbaloneGame {
                 let mut pos_state = switched;
                 let mut to_push = true;
                 for marb_pos in start_coords.as_slice() {
-                    let new_pos = *marb_pos + *marb_move;
+                    let new_pos = *marb_pos + marb_move;
                     if switched[new_pos.x][new_pos.y] == Self::EMPTY {
                         pos_state[marb_pos.x][marb_pos.y] = Self::EMPTY;
                         pos_state[new_pos.x][new_pos.y] = Self::WHITE;
@@ -970,9 +1118,9 @@ impl AbaloneGame {
                 }
                 let pos = Coord::new(x, y);
                 for (m, marb_move) in Self::MOVES.iter().enumerate() {
-                    let new_pos = pos + *marb_move;
+                    let new_pos = pos + marb_move;
                     if pov_state[new_pos.x][new_pos.y] == Self::EMPTY {
-                        let neigh1_marb = pos - *marb_move;
+                        let neigh1_marb = pos - marb_move;
                         if pov_state[neigh1_marb.x][neigh1_marb.y] == Self::WHITE {
                             next_moveids.push(self.move_straight_or_push_off(
                                 pov_state,
@@ -982,7 +1130,7 @@ impl AbaloneGame {
                                 marb_move.dy,
                             ));
 
-                            let neigh2_marb = neigh1_marb - *marb_move;
+                            let neigh2_marb = neigh1_marb - marb_move;
                             if pov_state[neigh2_marb.x][neigh2_marb.y] == Self::WHITE {
                                 next_moveids.push(self.move_straight_or_push_off(
                                     pov_state,
@@ -994,10 +1142,10 @@ impl AbaloneGame {
                             }
                         }
                     } else if pov_state[new_pos.x][new_pos.y] == Self::BLACK {
-                        let neigh1_marb = pos - *marb_move;
-                        let neigh2_marb = neigh1_marb - *marb_move;
+                        let neigh1_marb = pos - marb_move;
                         if pov_state[neigh1_marb.x][neigh1_marb.y] == Self::WHITE {
-                            let target = new_pos + *marb_move;
+                            let target = new_pos + marb_move;
+                            let neigh2_marb = neigh1_marb - marb_move;
                             if pov_state[target.x][target.y] == Self::OFF_BOARD {
                                 next_moveids.push(self.move_straight_or_push_off(
                                     pov_state,
@@ -1037,7 +1185,7 @@ impl AbaloneGame {
                             } else if pov_state[target.x][target.y] == Self::BLACK
                                 && pov_state[neigh2_marb.x][neigh2_marb.y] == Self::WHITE
                             {
-                                let beyond = target + *marb_move;
+                                let beyond = target + marb_move;
                                 if pov_state[beyond.x][beyond.y] == Self::OFF_BOARD {
                                     next_moveids.push(self.move_straight_or_push_off(
                                         pov_state,
@@ -1066,7 +1214,7 @@ impl AbaloneGame {
                         for b in 0..Self::MARBLE_ROW {
                             let mar_pos = pos.multi_move(side_move, b);
                             if pov_state[mar_pos.x][mar_pos.y] == Self::WHITE {
-                                let target = mar_pos + *marb_move;
+                                let target = mar_pos + marb_move;
                                 if pov_state[target.x][target.y] == Self::EMPTY {
                                     new_board[mar_pos.x][mar_pos.y] = Self::EMPTY;
                                     new_board[target.x][target.y] = Self::WHITE;

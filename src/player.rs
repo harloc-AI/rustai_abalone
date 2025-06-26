@@ -402,7 +402,7 @@ impl MagisterLudi {
                                 aba.update_state(next_state);
                                 moves_performed += 1;
                                 // will never be true for self.mcts_depth == 0
-                                if moves_performed == mcts_depth {
+                                if moves_performed == mcts_depth || aba.get_game_ended() {
                                     break;
                                 }
                             }

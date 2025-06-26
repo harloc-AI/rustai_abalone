@@ -23,8 +23,9 @@ pub mod util;
 mod tests {
     use util::{download_model, check_model_present};
     use std::path::Path;
-    use game::AbaloneGame;
+    use game::{AbaloneGame, BELGIAN_DAISY};
     use player::MagisterLudi;
+    use rand::Rng;
 
     use super::*;
 
@@ -41,15 +42,15 @@ mod tests {
         // change board to something with all possibilities
         let board = [
             [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-            [3, 3, 3, 3, 3, 1, 1, 0, 2, 2, 3],
+            [3, 3, 3, 3, 3, 0, 0, 0, 2, 0, 3],
             [3, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3],
-            [3, 3, 3, 0, 1, 1, 0, 2, 2, 0, 3],
-            [3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 3],
-            [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
-            [3, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3],
+            [3, 3, 3, 0, 1, 2, 2, 0, 2, 0, 3],
+            [3, 3, 0, 0, 0, 1, 0, 0, 1, 0, 3],
+            [3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 3],
+            [3, 0, 2, 0, 0, 0, 1, 0, 0, 3, 3],
             [3, 0, 2, 2, 0, 1, 1, 0, 3, 3, 3],
-            [3, 2, 2, 2, 1, 1, 1, 3, 3, 3, 3],
-            [3, 2, 2, 0, 1, 1, 3, 3, 3, 3, 3],
+            [3, 1, 2, 2, 2, 1, 1, 3, 3, 3, 3],
+            [3, 2, 1, 0, 0, 0, 3, 3, 3, 3, 3],
             [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
         ];
         // create
@@ -85,8 +86,54 @@ mod tests {
     }
 
     #[test]
-    fn test_magister_ludi() {
-        let mut magi_ludi = MagisterLudi::new(game::BELGIAN_DAISY, None, 10, 5, 1, 5);
+    fn test_game_end() {
+        let mut abalone = AbaloneGame::new(BELGIAN_DAISY);
+        let mut moves_performed: usize = 0;
+        loop {
+            let (_, move_ids) = abalone.calc_reasonalbe_moves();
+            let num = rand::thread_rng().gen_range(0..move_ids.len());
+            let next_pos = abalone.get_next_position(num);
+            abalone.update_state(next_pos);
+            /*
+            after 50 moves without a marble loss, the game ends in a draw
+            so if a marble is lost on move 50, the counter is reset
+            after 10 marble losses = 500 moves, the game has to end by move 550
+            as it is either the final marble loss (5 losses for one side and 6 for the other) or a draw
+            to be complete sure maximum is set to 600
+             */
+            moves_performed += 1;
+            if moves_performed >= 600 {
+                panic!("The game somehow did not end");
+            }
+            let game_ended = abalone.get_game_ended();
+            if game_ended {
+                println!("Loop, game ended = {game_ended}");
+                break;
+            }
+        }
+        let game_ended = abalone.get_game_ended();
+        let game_result = abalone.get_game_result();
+        println!("game ended = {game_ended} - game result = {game_result}");
+        assert_ne!(game_result, 10);
+        assert!(game_ended);
+    }
+
+    #[test]
+    fn test_magister_ludi_limited() {
+        let mut magi_ludi = MagisterLudi::new(game::BELGIAN_DAISY, None, 10, 5, 1, 15);
+        println!("initialized succesfully");
+        let chosen_move = magi_ludi.own_move(true);
+        assert!(AbaloneGame::validate_board(chosen_move));
+        println!("Finished move");
+        magi_ludi.start_new_game(game::BELGIAN_DAISY);
+        println!("Started new game");
+        magi_ludi.stop_execution();
+        println!("Stopped execution");
+    }
+
+    #[test]
+    fn test_magister_ludi_full() {
+        let mut magi_ludi = MagisterLudi::new(game::BELGIAN_DAISY, None, 10, 5, 1, 0);
         println!("initialized succesfully");
         let chosen_move = magi_ludi.own_move(true);
         assert!(AbaloneGame::validate_board(chosen_move));
